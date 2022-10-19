@@ -918,15 +918,7 @@ func (w *Worker) getAddrDescUtxo(addrDesc bchain.AddressDescriptor, ba *db.AddrB
                 if err != nil {
                     return nil, err
                 }
-                ta, err := w.db.GetTxAddresses(txid)
- 				if err != nil {
- 					return nil, err
- 				}
- 				addr, _, err := ta.Outputs[utxo.Vout].Addresses(w.chainParser)
- 				if err != nil {
- 					return nil, err
- 				}
-                stakeContract := pivx.IsP2CSScript(addr)
+                stakeContract := pivx.IsP2CSScript(addrDesc)
                 _, e := spentInMempool[txid+strconv.Itoa(int(utxo.Vout))]
                 if !e {
                     r = append(r, Utxo{
