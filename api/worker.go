@@ -880,7 +880,7 @@ func (w *Worker) getAddrDescUtxo(addrDesc bchain.AddressDescriptor, ba *db.AddrB
                             // report only outpoints that are not spent in mempool
                             _, e := spentInMempool[bchainTx.Txid+strconv.Itoa(i)]
                             if !e {
-                                stakeContract := pivx.isP2CSScript(addrDesc)
+                                stakeContract := pivx.IsP2CSScript(addrDesc)
                                 r = append(r, Utxo{
                                     Txid:          bchainTx.Txid,
                                     Vout:          int32(i),
@@ -919,7 +919,7 @@ func (w *Worker) getAddrDescUtxo(addrDesc bchain.AddressDescriptor, ba *db.AddrB
                 if err != nil {
                     return nil, err
                 }
-                stakeContract := pivx.isP2CSScript(addrDesc)
+                stakeContract := pivx.IsP2CSScript(addrDesc)
                 _, e := spentInMempool[txid+strconv.Itoa(int(utxo.Vout))]
                 if !e {
                     r = append(r, Utxo{
