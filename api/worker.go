@@ -879,11 +879,13 @@ func (w *Worker) getAddrDescUtxo(addrDesc bchain.AddressDescriptor, ba *db.AddrB
                             // report only outpoints that are not spent in mempool
                             _, e := spentInMempool[bchainTx.Txid+strconv.Itoa(i)]
                             if !e {
+                                stakeContract := pivx.IsP2CSScript(addrDesc)
                                 r = append(r, Utxo{
-                                    Txid:      bchainTx.Txid,
-                                    Vout:      int32(i),
-                                    AmountSat: (*Amount)(&vout.ValueSat),
-                                    Locktime:  bchainTx.LockTime,
+                                    Txid:          bchainTx.Txid,
+                                    Vout:          int32(i),
+                                    AmountSat:     (*Amount)(&vout.ValueSat),
+                                    Locktime:      bchainTx.LockTime,
+                                    StakeContract: stakeContract,
                                 })
                             }
                         }
@@ -916,6 +918,15 @@ func (w *Worker) getAddrDescUtxo(addrDesc bchain.AddressDescriptor, ba *db.AddrB
                 if err != nil {
                     return nil, err
                 }
+                ta, err := w.db.GetTxAddresses(txid)
+ 				if err != nil {
+ 					return nil, err
+ 				}
+ 				addr, _, err := ta.Outputs[utxo.Vout].Addresses(w.chainParser)
+ 				if err != nil {
+ 					return nil, err
+ 				}
+                stakeContract := pivx.IsP2CSScript(addr)
                 _, e := spentInMempool[txid+strconv.Itoa(int(utxo.Vout))]
                 if !e {
                     r = append(r, Utxo{
@@ -924,6 +935,7 @@ func (w *Worker) getAddrDescUtxo(addrDesc bchain.AddressDescriptor, ba *db.AddrB
                         AmountSat:     (*Amount)(&utxo.ValueSat),
                         Height:        int(utxo.Height),
                         Confirmations: bestheight - int(utxo.Height) + 1,
+                        StakeContract: stakeContract,
                     })
                 }
                 checksum.Sub(&checksum, &utxo.ValueSat)
