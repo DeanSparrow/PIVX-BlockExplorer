@@ -3,6 +3,7 @@ package api
 import (
     "blockbook/bchain"
     "blockbook/bchain/coins/eth"
+    "blockbook/bchain/coins/pivx"
     "blockbook/common"
     "blockbook/db"
     "bytes"
