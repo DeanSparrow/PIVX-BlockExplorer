@@ -3,7 +3,6 @@ package api
 import (
     "blockbook/bchain"
     "blockbook/bchain/coins/eth"
-    "blockbook/bchain/coins/pivx"
     "blockbook/common"
     "blockbook/db"
     "bytes"
@@ -52,6 +51,17 @@ func (w *Worker) getAddressesFromVout(vout *bchain.Vout) (bchain.AddressDescript
     }
     a, s, err := w.chainParser.GetAddressesFromAddrDesc(addrDesc)
     return addrDesc, a, s, err
+}
+
+// returns true if scriptPubKey is P2CS
+func isP2CS(addrs []string) bool {
+    if len(addrs) != 2 {
+        return false
+    }
+    // dirty hack (to remove multisig false positives)
+    // !TODO: implement flag in Vin and Vout objects
+    return (len(addrs[0]) > 0 &&
+                 (addrs[0][0:1] == "S" || addrs[0][0:1] == "W"))
 }
 
 // setSpendingTxToVout is helper function, that finds transaction that spent given output and sets it to the output
@@ -878,9 +888,13 @@ func (w *Worker) getAddrDescUtxo(addrDesc bchain.AddressDescriptor, ba *db.AddrB
                         vad, err := w.chainParser.GetAddrDescFromVout(vout)
                         if err == nil && bytes.Equal(addrDesc, vad) {
                             // report only outpoints that are not spent in mempool
+                            stakeContract := false
                             _, e := spentInMempool[bchainTx.Txid+strconv.Itoa(i)]
+                            addr := vout.ScriptPubKey.Addresses
                             if !e {
-                                stakeContract := pivx.IsP2CSScript(addrDesc)
+                                if isP2CS(addr) {
+                                    stakeContract = true
+                                }
                                 r = append(r, Utxo{
                                     Txid:          bchainTx.Txid,
                                     Vout:          int32(i),
@@ -919,7 +933,20 @@ func (w *Worker) getAddrDescUtxo(addrDesc bchain.AddressDescriptor, ba *db.AddrB
                 if err != nil {
                     return nil, err
                 }
-                stakeContract := pivx.IsP2CSScript(addrDesc)
+                stakeContract := false
+                ta, err := w.db.GetTxAddresses(txid)
+ 				if err != nil {
+ 					return nil, err
+ 				}
+ 				addr, _, err := ta.Outputs[utxo.Vout].Addresses(w.chainParser)
+ 				if err != nil {
+ 					return nil, err
+ 				}
+                if len(addr) > 1 {
+                    if isP2CS(addr) {
+                        stakeContract = true
+                    }
+                }
                 _, e := spentInMempool[txid+strconv.Itoa(int(utxo.Vout))]
                 if !e {
                     r = append(r, Utxo{
