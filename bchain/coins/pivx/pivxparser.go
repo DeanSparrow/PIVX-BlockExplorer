@@ -39,7 +39,8 @@ const (
     OP_CHECKSIG = 0xac
     OP_ZEROCOINMINT  = 0xc1
     OP_ZEROCOINSPEND  = 0xc2
-    OP_CHECKCOLDSTAKEVERIFY = 0xd1
+    OP_CHECKCOLDSTAKEVERIFY_LOF = 0xd1
+    OP_CHECKCOLDSTAKEVERIFY = 0xd2
 
     // Labels
     ZCMINT_LABEL = "Zerocoin Mint"
@@ -340,7 +341,7 @@ func IsP2CSScript(signatureScript []byte) bool {
            signatureScript[1] == OP_HASH160 &&
            signatureScript[2] == OP_ROT &&
            signatureScript[3] == OP_IF &&
-           signatureScript[4] == OP_CHECKCOLDSTAKEVERIFY &&
+           (signatureScript[4] == OP_CHECKCOLDSTAKEVERIFY || signatureScript[4] == OP_CHECKCOLDSTAKEVERIFY_LOF) &&
            signatureScript[5] == 0x14 &&
            signatureScript[26] == OP_ELSE &&
            signatureScript[27] == 0x14 &&
