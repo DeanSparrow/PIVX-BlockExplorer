@@ -8,6 +8,7 @@ import (
     "blockbook/db"
     "bytes"
     "encoding/json"
+    "encoding/hex"
     "fmt"
     "math"
     "math/big"
@@ -880,7 +881,10 @@ func (w *Worker) getAddrDescUtxo(addrDesc bchain.AddressDescriptor, ba *db.AddrB
                             // report only outpoints that are not spent in mempool
                             _, e := spentInMempool[bchainTx.Txid+strconv.Itoa(i)]
                             if !e {
-                                stakeContract := pivx.IsP2CSScript(addrDesc)
+                                // Get ScriptPubKey for vout and check if it is a cold staking contract
+                                script, _ := hex.DecodeString(bchainTx.Vout[i].ScriptPubKey.Hex)
+                                stakeContract := pivx.IsP2CSScript(script)
+
                                 r = append(r, Utxo{
                                     Txid:          bchainTx.Txid,
                                     Vout:          int32(i),
@@ -919,9 +923,13 @@ func (w *Worker) getAddrDescUtxo(addrDesc bchain.AddressDescriptor, ba *db.AddrB
                 if err != nil {
                     return nil, err
                 }
-                stakeContract := pivx.IsP2CSScript(addrDesc)
                 _, e := spentInMempool[txid+strconv.Itoa(int(utxo.Vout))]
                 if !e {
+                    // Get ScriptPubKey for vout and check if it is a cold staking contract
+                    bchainTx, _, _ := w.txCache.GetTransaction(txid)
+                    script, _ := hex.DecodeString(bchainTx.Vout[utxo.Vout].ScriptPubKey.Hex)
+                    stakeContract := pivx.IsP2CSScript(script)
+
                     r = append(r, Utxo{
                         Txid:          txid,
                         Vout:          utxo.Vout,

@@ -524,10 +524,11 @@ func (d *RocksDB) GetAndResetConnectBlockStats() string {
 }
 
 // PIVX
-const OP_CHECKCOLDSTAKEVERIFY = 0xd1
+const OP_CHECKCOLDSTAKEVERIFY_LOF = 0xd1
+const OP_CHECKCOLDSTAKEVERIFY = 0xd2
 
 func isPayToColdStake(signatureScript []byte) bool {
-    return len(signatureScript) > 50 && signatureScript[4] == OP_CHECKCOLDSTAKEVERIFY
+    return len(signatureScript) > 50 && (signatureScript[4] == OP_CHECKCOLDSTAKEVERIFY || signatureScript[4] == OP_CHECKCOLDSTAKEVERIFY_LOF)
 }
 
 func getOwnerFromP2CS(signatureScript []byte) ([]byte, error) {
